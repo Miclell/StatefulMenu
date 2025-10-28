@@ -104,18 +104,14 @@ public class NavigationService(NavigationStack stack, MenuRenderer renderer, ISe
                 continue;
             }
 
-            // Digit selection (1..N)
+            // Digit selection (1..N) - only select, don't execute
             if (char.IsDigit(keyInfo.KeyChar))
             {
                 var idx = (int) char.GetNumericValue(keyInfo.KeyChar);
                 if (idx >= 1 && idx <= current.Items.Count)
                 {
                     selectedIndex = idx - 1;
-                    var item = current.Items[selectedIndex];
-                    var result = await item.Action(ct);
-                    await ApplyResultAsync(result, ct);
                 }
-
                 continue;
             }
 
