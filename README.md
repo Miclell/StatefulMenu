@@ -2,16 +2,19 @@
 
 ![NuGet](https://img.shields.io/nuget/v/StatefulMenu.svg)
 ![Tests](https://github.com/Miclell/StatefulMenu/actions/workflows/dotnet.yml/badge.svg)
+[English README](./README.en.md)
+Документация: [docs/ru](./docs/ru/guide.md) · [docs/en](./docs/en/guide.md)
 
 Минималистичная библиотека для построения «состоящих из экранов» консольных меню на .NET с навигацией по стеку, хоткеями, локализацией и безопасным вводом данных.
 
 ## Возможности
 - ✅ Интерактивные меню и навигация по стеку экранов
-- ✅ Хоткеи, стрелки, выбор по цифрам, Esc для «назад»
+- ✅ Хоткеи, стрелки, выбор по цифрам (многозначный), Esc для «назад», нулевой пункт `0`
 - ✅ Ввод моделей из консоли: обязательные/необязательные поля, `nullable`
 - ✅ Валидация: RegEx и пользовательские валидаторы/конвертеры
 - ✅ Локализация (ru/en) из коробки
 - ✅ DI-расширение и авто‑регистрация команд/провайдеров меню
+- ✅ Кастомный хэдер (`MenuHeaderOptions`), скрытые пункты (`MenuItem.Hidden`), хелперы `MenuItem.Back/Exit`
 
 ## Установка
 ```bash
@@ -88,6 +91,7 @@ public class HomeMenuProvider : IMenuProvider
 - **↑/↓**: перемещение по пунктам
 - **Esc**: назад (`Pop`)
 - **Хоткеи**: если у `MenuItem` задан `ConsoleKey`, нажатие сразу выполнит его действие
+- **0**: нулевой пункт «Назад/Выход» (можно выбирать и стрелками)
 
 ## Ввод данных из консоли
 Сервис `IConsoleInputService` позволяет запрашивать модель, помечая свойства атрибутом `InputField`.
@@ -118,28 +122,28 @@ var model = await input.ReadModelAsync<CreateUserModel>();
 - **RegEx** (`Pattern` + `ErrorMessage`)
 - **Пользовательские валидаторы/конвертеры** через `Validators`/`Converters` (типы с публичным методом `bool Validate(string input, out string? error)` и конвертеры, возвращающие значение/ошибку)
 - **Enum**-поля (с подсказкой допустимых значений)
+- **Заголовок формы** через атрибут класса `[InputModel("Заголовок")]`
 
 Локализация сообщений (ru/en) выбирается автоматически по `CultureInfo.CurrentCulture`.
 
 ## Общие сервисы
 - `INavigationService` — управление стеком экранов, события `Navigating`/`Navigated`
 - `IDataService` — простой ключ/значение стор для обмена данными между экранами
-- `MenuRenderer` — отрисовка текущего экрана в консоль
+- `MenuRenderer` — отрисовка текущего экрана в консоль (вьюпорт с центрированием, хэдер, 0‑пункт)
 
 ## DI и авто‑регистрация
-`services.AddStatefulMenu(params Assembly[] scanAssemblies)`:
+`services.AddStatefulMenu()`:
 - Регистрирует локализатор, рендерер, ввод, навигацию и стор
 - Сканирует указанные сборки (или вызывающую по умолчанию) на реализации `IMenuProvider` и `IMenuCommand` и регистрирует их
-
-Чтобы контролировать сборки для сканирования:
-```csharp
-services.AddStatefulMenu(typeof(HomeMenuProvider).Assembly);
-```
 
 ## Советы по структуре
 - Держите каждый экран как `IMenuProvider`
 - Возвращайте `MenuResult` из действий пунктов меню
 - Для сложных сценариев храните данные в `IDataService`
+ - Для обратной совместимости: просто добавьте `BackCommand/ExitCommand/HomeCommand` в список команд — они автоматически рендерятся как «0»
+
+## Примеры
+- Полный демо‑проект: `temp/ClinicDemo`
 
 ## Требования
 - .NET 9.0+
