@@ -12,7 +12,7 @@
         <PackageTags>console;menu;interactive;validation;localization</PackageTags>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/Miclell/StatefulMenu</RepositoryUrl>
-        <Version>1.0.0-preview.1</Version>
+        <Version>1.0.0</Version>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
