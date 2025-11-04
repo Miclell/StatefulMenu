@@ -58,7 +58,8 @@ public class ConsoleInputService : IConsoleInputService
         }
 
         Console.WriteLine();
-        Console.WriteLine(_loc.InputHeader(modelType.Name));
+        var modelTitle = modelType.GetCustomAttribute<InputModelAttribute>()?.Title ?? modelType.Name;
+        Console.WriteLine(_loc.InputHeader(modelTitle));
         Console.WriteLine();
 
         // First collect values for all properties

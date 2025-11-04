@@ -11,3 +11,14 @@ public class InputFieldAttribute(string displayName) : Attribute
     public Type[] Validators { get; set; } = [];
     public Type[] Converters { get; set; } = [];
 }
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+public sealed class InputModelAttribute : Attribute
+{
+    public InputModelAttribute(string title)
+    {
+        Title = title;
+    }
+
+    public string Title { get; }
+}
