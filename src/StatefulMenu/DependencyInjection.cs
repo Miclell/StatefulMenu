@@ -11,7 +11,7 @@ namespace StatefulMenu;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddStatefulMenu(this IServiceCollection services, params Assembly[] scanAssemblies)
+    public static IServiceCollection AddStatefulMenu(this IServiceCollection services)
     {
         services.AddSingleton<IConsoleLocalizer>(sp =>
         {
@@ -24,31 +24,26 @@ public static class DependencyInjection
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IConsoleInputService, ConsoleInputService>();
 
-        var assemblies = scanAssemblies is {Length: > 0}
-            ? scanAssemblies
-            : new[] {Assembly.GetCallingAssembly()};
+        var callingAssembly = Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly();
+    
+        var assemblies = new[] 
+        { 
+            typeof(IMenuCommand).Assembly, // StatefulMenu
+            typeof(IMenuProvider).Assembly, // StatefulMenu  
+            callingAssembly // CLI
+        };
 
-        foreach (var assembly in assemblies)
-        {
-            RegisterImplementations<IMenuProvider>(services, assembly, ServiceLifetime.Transient);
-            RegisterImplementations<IMenuCommand>(services, assembly, ServiceLifetime.Transient);
-        }
+        services.Scan(scan => scan
+            .FromAssemblies(assemblies)
+            .AddClasses(classes => classes.AssignableTo<IMenuCommand>())
+            .AsSelf()
+            .AsImplementedInterfaces() 
+            .WithTransientLifetime()
+            .AddClasses(classes => classes.AssignableTo<IMenuProvider>())
+            .AsSelf()
+            .AsImplementedInterfaces()
+            .WithTransientLifetime());
 
         return services;
-    }
-
-    private static void RegisterImplementations<TInterface>(IServiceCollection services, Assembly assembly,
-        ServiceLifetime lifetime)
-    {
-        var interfaceType = typeof(TInterface);
-        var types = assembly
-            .GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface && interfaceType.IsAssignableFrom(t));
-
-        foreach (var type in types)
-        {
-            services.Add(new ServiceDescriptor(type, type, lifetime));
-            services.Add(new ServiceDescriptor(interfaceType, sp => sp.GetRequiredService(type), lifetime));
-        }
     }
 }

@@ -142,7 +142,7 @@ services.AddStatefulMenu(typeof(HomeMenuProvider).Assembly);
 - Для сложных сценариев храните данные в `IDataService`
 
 ## Требования
-- .NET 8.0+
+- .NET 9.0+
 
 ## Лицензия
 MIT — см. `LICENSE`.

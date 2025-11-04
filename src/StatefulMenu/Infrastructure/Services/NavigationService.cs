@@ -61,10 +61,13 @@ public class NavigationService(NavigationStack stack, MenuRenderer renderer, ISe
         Push(initial);
 
         var selectedIndex = 0;
+        var numberBuffer = string.Empty;
 
         while (Count > 0 && !ct.IsCancellationRequested)
         {
             var current = Peek()!;
+            var zeroItem = current.Items.FirstOrDefault(MenuItemUtilities.IsZero);
+            var regularItems = current.Items.Where(x => !MenuItemUtilities.IsZero(x) && !x.IsHidden).ToList();
             if (current.Items.Count == 0)
             {
                 // Nothing to select; wait for any key to go back
@@ -74,9 +77,10 @@ public class NavigationService(NavigationStack stack, MenuRenderer renderer, ISe
                 continue;
             }
 
-            // Clamp selection
+            // Clamp selection (include zero item as last selectable)
+            var totalCount = regularItems.Count + (zeroItem != null ? 1 : 0);
             if (selectedIndex < 0) selectedIndex = 0;
-            if (selectedIndex >= current.Items.Count) selectedIndex = current.Items.Count - 1;
+            if (selectedIndex >= totalCount) selectedIndex = Math.Max(0, totalCount - 1);
 
             renderer.Render(current, selectedIndex);
 
@@ -85,38 +89,102 @@ public class NavigationService(NavigationStack stack, MenuRenderer renderer, ISe
 
             if (ct.IsCancellationRequested) break;
 
-            if (HandleNavigationKey(keyInfo, current.Items.Count, ref selectedIndex)) continue;
+            if (HandleNavigationKey(keyInfo, totalCount, ref selectedIndex)) continue;
 
             if (TryResolveHotkey(current, keyInfo, out var hotkeyIndex))
             {
-                selectedIndex = hotkeyIndex;
-                var hkItem = current.Items[selectedIndex];
-                var hkResult = await hkItem.Action(ct);
-                await ApplyResultAsync(hkResult, ct);
+                var hkItem = current.Items[hotkeyIndex];
+                if (hkItem.IsZeroIndex)
+                {
+                    var zRes = await hkItem.Action(ct);
+                    await ApplyResultAsync(zRes, ct);
+                }
+                else
+                {
+                    var regIdx = regularItems.IndexOf(hkItem);
+                    if (regIdx >= 0) selectedIndex = regIdx;
+                    var hkResult = await hkItem.Action(ct);
+                    await ApplyResultAsync(hkResult, ct);
+                }
                 continue;
             }
 
             if (keyInfo.Key == ConsoleKey.Enter)
             {
-                var item = current.Items[selectedIndex];
-                var result = await item.Action(ct);
-                await ApplyResultAsync(result, ct);
+                if (!string.IsNullOrEmpty(numberBuffer))
+                {
+                    if (int.TryParse(numberBuffer, out var parsedIndex))
+                    {
+                        if (parsedIndex == 0 && zeroItem != null)
+                        {
+                            var zr = await zeroItem.Action(ct);
+                            await ApplyResultAsync(zr, ct);
+                        }
+                        else if (parsedIndex >= 1 && parsedIndex <= regularItems.Count)
+                        {
+                            selectedIndex = parsedIndex - 1;
+                            var numItem = regularItems[selectedIndex];
+                            var numResult = await numItem.Action(ct);
+                            await ApplyResultAsync(numResult, ct);
+                        }
+                    }
+                    numberBuffer = string.Empty;
+                }
+                else
+                {
+                    if (zeroItem != null && selectedIndex == regularItems.Count)
+                    {
+                        var zr = await zeroItem.Action(ct);
+                        await ApplyResultAsync(zr, ct);
+                    }
+                    else
+                    {
+                        var item = regularItems[selectedIndex];
+                        var result = await item.Action(ct);
+                        await ApplyResultAsync(result, ct);
+                    }
+                }
                 continue;
             }
 
-            // Digit selection (1..N) - only select, don't execute
+            // Digit selection (multi-digit 0..N)
             if (char.IsDigit(keyInfo.KeyChar))
             {
-                var idx = (int) char.GetNumericValue(keyInfo.KeyChar);
-                if (idx >= 1 && idx <= current.Items.Count)
+                // Immediate action for 0 if zeroItem exists
+                if (keyInfo.KeyChar == '0' && zeroItem != null)
                 {
-                    selectedIndex = idx - 1;
+                    var zr = await zeroItem.Action(ct);
+                    await ApplyResultAsync(zr, ct);
+                    numberBuffer = string.Empty;
+                    continue;
+                }
+
+                numberBuffer += keyInfo.KeyChar;
+                if (int.TryParse(numberBuffer, out var parsedIndex))
+                {
+                    if (parsedIndex >= 1 && parsedIndex <= regularItems.Count)
+                    {
+                        selectedIndex = parsedIndex - 1;
+                    }
+                    else
+                    {
+                        // вне диапазона — сбрасываем буфер
+                        numberBuffer = string.Empty;
+                    }
                 }
                 continue;
             }
 
             // Escape -> Back
-            if (keyInfo.Key == ConsoleKey.Escape) TryPop();
+            if (keyInfo.Key == ConsoleKey.Escape)
+            {
+                numberBuffer = string.Empty;
+                TryPop();
+                continue;
+            }
+
+            // Любая прочая клавиша — очистка буфера чисел
+            numberBuffer = string.Empty;
         }
     }
 
