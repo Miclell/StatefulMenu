@@ -1,0 +1,93 @@
+﻿name: Create Release and Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  PROJECT_PATH: './StatefulMenu/'
+  CONFIGURATION: 'Release'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.-]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            exit 1
+          fi
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build project
+        run: |
+          dotnet build ${{ env.PROJECT_PATH }} -c ${{ env.CONFIGURATION }} --no-restore \
+            -p:Version=${{ steps.get_version.outputs.VERSION }}
+
+      - name: Run tests
+        run: dotnet test ${{ env.PROJECT_PATH }} -c ${{ env.CONFIGURATION }} --no-build --verbosity normal
+
+      - name: Create NuGet packages
+        run: |
+          dotnet pack ${{ env.PROJECT_PATH }} -c ${{ env.CONFIGURATION }} \
+            --no-build \
+            -p:Version=${{ steps.get_version.outputs.VERSION }} \
+            -p:IncludeSymbols=true \
+            -p:SymbolPackageFormat=snupkg \
+            --output ./artifacts          
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Version ${{ steps.get_version.outputs.VERSION }}
+            
+            ### 📦 Packages
+            - **NuGet Package**: `${{ env.PROJECT_PATH }}.${{ steps.get_version.outputs.VERSION }}.nupkg`
+            - **Symbols Package**: `${{ env.PROJECT_PATH }}.${{ steps.get_version.outputs.VERSION }}.snupkg`
+            
+            ### 🚀 Installation
+            ```bash
+            dotnet add package StatefulMenu --version ${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            *Automatically generated release*
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to NuGet.org
+        run: |
+          echo "Publishing to NuGet.org..."
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

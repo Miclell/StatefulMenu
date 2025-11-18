@@ -70,21 +70,18 @@ public class NavigationService(NavigationStack stack, MenuRenderer renderer, ISe
             var regularItems = current.Items.Where(x => !MenuItemUtilities.IsZero(x) && !x.IsHidden).ToList();
             if (current.Items.Count == 0)
             {
-                // Nothing to select; wait for any key to go back
                 renderer.Render(current, selectedIndex);
                 _ = Console.ReadKey(true);
                 TryPop();
                 continue;
             }
 
-            // Clamp selection (include zero item as last selectable)
             var totalCount = regularItems.Count + (zeroItem != null ? 1 : 0);
             if (selectedIndex < 0) selectedIndex = 0;
             if (selectedIndex >= totalCount) selectedIndex = Math.Max(0, totalCount - 1);
 
             renderer.Render(current, selectedIndex);
 
-            // Read keyboard input with hotkeys, arrows and digits
             var keyInfo = Console.ReadKey(true);
 
             if (ct.IsCancellationRequested) break;

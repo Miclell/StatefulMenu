@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatefulMenu", "src\Statefu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{953EE581-F49C-4C2A-BD99-940D9C6B7AAB}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F3D147E8-53BF-4409-9067-997791C458A8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F3D147E8-53BF-4409-9067-997791C458A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatefulMenu.IntegrationTests", "test\StatefulMenu.IntegrationTests\StatefulMenu.IntegrationTests.csproj", "{DE4EB6C7-D599-46EC-9D3A-6E8FDFDEC170}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatefulMenu.IntegrationTests", "tests\StatefulMenu.IntegrationTests\StatefulMenu.IntegrationTests.csproj", "{DE4EB6C7-D599-46EC-9D3A-6E8FDFDEC170}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "temp", "temp", "{29F3AA1B-6D75-C75D-9183-749A65CD24A7}"
 EndProject
