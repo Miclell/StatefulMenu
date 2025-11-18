@@ -1,7 +1,7 @@
 # StatefulMenu
 
 ![NuGet](https://img.shields.io/nuget/v/StatefulMenu.svg)
-![Tests](https://github.com/Miclell/StatefulMenu/actions/workflows/dotnet.yml/badge.svg)
+![Tests](https://github.com/Miclell/StatefulMenu/actions/workflows/tests.yml/badge.svg)
 [English README](./README.en.md)
 Документация: [docs/ru](./docs/ru/guide.md) · [docs/en](./docs/en/guide.md)
 
