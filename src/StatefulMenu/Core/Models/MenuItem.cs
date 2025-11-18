@@ -21,7 +21,6 @@ public sealed class MenuItem
     public bool IsZeroIndex { get; }
     public bool IsHidden { get; }
 
-    // Helpers
     public static MenuItem Back(string? title = null, ConsoleKey? hotkey = null)
     {
         return new MenuItem(title ?? "Назад", _ => Task.FromResult<MenuResult>(MenuResult.Pop()), hotkey, isZeroIndex: true);

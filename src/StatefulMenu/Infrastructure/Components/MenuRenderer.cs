@@ -6,9 +6,18 @@ public class MenuRenderer
 {
     public void Render(MenuState state, int selectedIndex = 0)
     {
-        // Minimal side effects: avoid clearing screen to be safe in non-TTY contexts
-
-        // Header (custom segments) — если задан Header, переносим Title в первую ячейку и не выводим "=== Title ==="
+        if (!Console.IsOutputRedirected && Console.CursorVisible)
+        {
+            try
+            {
+                Console.Clear();
+            }
+            catch (IOException)
+            {
+                // Ignoring
+            }
+        }
+        
         if (state.Header is { } header)
         {
             var segs = new List<string>();
@@ -28,7 +37,6 @@ public class MenuRenderer
         var zeroItem = state.Items.FirstOrDefault(MenuItemUtilities.IsZero);
         var regularItems = state.Items.Where(x => !MenuItemUtilities.IsZero(x) && !x.IsHidden).ToList();
 
-        // Viewport calculations: keep selected centered when possible
         var headerLines = state.Header is {Segments.Count: > 0} ? 2 : 0; // header + underline
         var footerLines = zeroItem != null ? 2 : 1; // zero + hint
         var windowHeight = GetSafeWindowHeight();
@@ -42,7 +50,6 @@ public class MenuRenderer
             var item = regularItems[i];
             var prefix = i == selectedIndex ? "> " : "  ";
             var hotkey = item.Hotkey.HasValue ? $"[{item.Hotkey}] " : string.Empty;
-            // show global number (i+1)
             Console.WriteLine($"{prefix}{i + 1}. {hotkey}{item.Title}");
         }
 

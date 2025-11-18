@@ -62,7 +62,6 @@ public class ConsoleInputService : IConsoleInputService
         Console.WriteLine(_loc.InputHeader(modelTitle));
         Console.WriteLine();
 
-        // First collect values for all properties
         var collectedValues = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         foreach (var property in properties)
         {
